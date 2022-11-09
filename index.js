@@ -30,8 +30,10 @@ async function run ()
                     foodServices.date = new Date();
                     
                     const result = await foodServiceCollection.insertOne(foodServices);
-                    console.log(result)
-                    res.send(result)
+                    if(result.acknowledged)
+                    {
+                        res.send({insert:true})
+                    }
                     
                 });
 
@@ -99,6 +101,27 @@ async function run ()
 
                     res.send(allFeedback)
                     
+                })
+
+                // feedback load by user uid
+
+                app.get('/feedback/user/:id',async(req,res)=>{
+                    const id = req.params.id;
+                    const query = {
+                      uid:id
+                    }
+
+                    const sort = {
+                    date:-1
+                    }
+
+                    const cursor = feedbackCollection.find(query).sort(sort);;
+                    const allFeedback = await cursor.toArray();
+
+                   res.send(allFeedback)
+
+                
+                
                 })
         }
         finally
