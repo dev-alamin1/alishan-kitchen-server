@@ -21,7 +21,7 @@ async function run ()
             
                 //create db, collection
                 const foodServiceCollection = client.db('foodService').collection('foodServiceCollection');
-                const reviewCollection = client.db('foodService').collection('reviewCollection');
+                const feedbackCollection = client.db('foodService').collection('feedbackCollection');
 
 
                 //store foodService 
@@ -68,9 +68,37 @@ async function run ()
 
                 // store review/feedback
 
-                app.post('/add/feedback',(req,res)=>{
+                app.post('/add/feedback',async(req,res)=>{
                      const userFeedback = req.body;
-                     console.log(userFeedback);
+
+                     userFeedback.date = new Date();
+
+                     const result = await feedbackCollection.insertOne(userFeedback);
+
+                     if(result.acknowledged)
+                     {
+                         res.send({insert:true})
+                     }
+                })
+
+                // feedback load by post id
+
+                app.get('/feedback/:id',async(req,res)=>{
+                     const id = req.params.id;
+                     
+                     const query = {
+                        recipePostId:id
+                     }
+
+                     const sort = {
+                        date:-1
+                     }
+
+                     const cursor = feedbackCollection.find(query).sort(sort);;
+                     const allFeedback = await cursor.toArray();
+
+                    res.send(allFeedback)
+                    
                 })
         }
         finally
