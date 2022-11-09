@@ -64,6 +64,14 @@ async function run ()
                         const foodService = await foodServiceCollection.findOne(query);
                         res.send(foodService);
                 });
+
+
+                // store review/feedback
+
+                app.post('/add/feedback',(req,res)=>{
+                     const userFeedback = req.body;
+                     console.log(userFeedback);
+                })
         }
         finally
         {
