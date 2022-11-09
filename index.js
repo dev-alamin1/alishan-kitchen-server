@@ -118,11 +118,24 @@ async function run ()
                     const cursor = feedbackCollection.find(query).sort(sort);;
                     const allFeedback = await cursor.toArray();
 
-                   res.send(allFeedback)
-
-                
-                
+                   res.send(allFeedback)      
                 })
+
+                // delete user feedback 
+                app.delete('/delete/:id',async(req,res)=>{
+                    const id = req.params.id;
+                    const query = {
+                        _id: ObjectId(id)
+                    }
+
+                    const result = await feedbackCollection.deleteOne(query);
+                    if(result.deletedCount>0)
+                    {
+                        res.send({
+                            deleteSuccess:true
+                        })
+                    }
+                });
         }
         finally
         {
