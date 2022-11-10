@@ -103,6 +103,50 @@ async function run ()
                     
                 })
 
+
+                // feedback load by feedback id , for edit 
+
+                app.get('/edit/feedback/:id',async(req,res)=>{
+                    const id = req.params.id;
+                    
+                    const query = {
+                       _id:ObjectId(id)
+                    }
+
+                    const Feedback = await feedbackCollection.findOne(query);
+
+                   res.send(Feedback)
+                   console.log(Feedback);
+                   
+               })
+
+
+               app.put('/update/feedback/:id',async(req,res)=>{
+                const id = req.params.id;
+                const feedback = req.body;
+                
+                const options = { upsert: true };
+
+                const filter = {
+                    _id: ObjectId(id)
+                }
+
+                const updateDoc = {
+                  $set: {
+                    feedback:feedback.feedback
+                  },
+                };
+  
+
+                const result = await feedbackCollection.updateOne(filter,updateDoc,options);
+                res.send(result)
+  
+               
+           })
+
+
+             
+
                 // feedback load by user uid
 
                 app.get('/feedback/user/:id',async(req,res)=>{
