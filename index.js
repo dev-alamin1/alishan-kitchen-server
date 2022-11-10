@@ -1,7 +1,8 @@
 const express = require('express');
 const app = express();
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
+var jwt = require('jsonwebtoken');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 
@@ -14,6 +15,31 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.mttjtbw.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+function verifyJWT(req,res,next)
+{
+    const authHeader = req.headers.authorization;
+    if(!authHeader)
+    {
+       return res.status(401).send({message : 'unauthorized access'});
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET, function(err,decoded){
+        if(err)
+        {
+           return res.status(401).send({message : 'unauthorized access'});
+        }
+
+        req.decoded = decoded.email; 
+
+        // console.log('middler theke 1st ',decoded.email),
+        // console.log('middle ware theke 2nd',req.decoded)
+
+        next();
+    })
+}
+
 async function run ()
 {
         try
@@ -23,6 +49,12 @@ async function run ()
                 const foodServiceCollection = client.db('foodService').collection('foodServiceCollection');
                 const feedbackCollection = client.db('foodService').collection('feedbackCollection');
 
+                // jwt token 
+                app.post('/jwt',(req,res)=>{
+                    const user = req.body;
+                     const  token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:'1h'});
+                    res.send({token})
+                })
 
                 //store foodService 
                 app.post('/addFoodService',async(req,res)=>{
@@ -46,12 +78,12 @@ async function run ()
                     {
                         const cursor = foodServiceCollection.find({}).sort(sort).limit(limitQuery);
                         const result = await cursor.toArray();
-                        res.send(result)
+                       return res.send(result)
 
                     }else{
                         const cursor = foodServiceCollection.find({}).sort(sort);
                         const result = await cursor.toArray();
-                        res.send(result);
+                         return res.send(result);
                         
 
                     }
@@ -146,23 +178,33 @@ async function run ()
 
 
              
+                // feedback load by user email
 
-                // feedback load by user uid
+                app.get('/feedback',verifyJWT,async(req,res)=>{
+                    
+                    const decoded = req.decoded;
 
-                app.get('/feedback/user/:id',async(req,res)=>{
-                    const id = req.params.id;
-                    const query = {
-                      uid:id
+                    if(decoded !== req.query.email)
+                    {
+                       return res.status(403).send({message : 'unauthorized access'});
                     }
+                   
+                    let query = {};
+
+                        if (req.query.email) {
+                            query = {
+                                userEmail: req.query.email
+                            }
+                        }
 
                     const sort = {
-                    date:-1
+                         date:-1
                     }
 
                     const cursor = feedbackCollection.find(query).sort(sort);;
                     const allFeedback = await cursor.toArray();
 
-                   res.send(allFeedback)      
+                   return res.send(allFeedback)      
                 })
 
                 // delete user feedback 
